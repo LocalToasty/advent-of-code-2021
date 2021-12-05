@@ -1,5 +1,3 @@
-#!/usr/bin/env chibi-scheme
-
 ; --- Day 1: Sonar Sweep ---
 ;
 ; You're minding your own business on a ship at sea when the overboard alarm
@@ -115,8 +113,12 @@
 ; Consider sums of a three-measurement sliding window. How many sums are
 ; larger than the previous sum?
 
-(import (scheme small)
-        (scheme list))
+(import (scheme base)
+	(scheme process-context)
+	(scheme file)
+	(scheme read)
+	(scheme write)
+	(scheme list))
 
 (define (read-input filename)
   (with-input-from-file filename

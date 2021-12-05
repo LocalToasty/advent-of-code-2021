@@ -1,5 +1,3 @@
-#!/usr/bin/env chibi-scheme
-
 ; --- Day 3: Binary Diagnostic ---
 ;
 ; The submarine has been making some odd creaking noises, so you ask it to
@@ -129,8 +127,11 @@
 ; is the life support rating of the submarine? (Be sure to represent your
 ; answer in decimal, not binary.)
 
-
-(import (scheme small)
+(import (scheme base)
+	(scheme process-context)
+	(scheme file)
+	(scheme read)
+	(scheme write)
         (scheme list)
         (scheme vector)
         (scheme bitwise))

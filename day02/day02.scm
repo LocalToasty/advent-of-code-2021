@@ -1,5 +1,3 @@
-#!/usr/bin/env chibi-scheme
-
 ; --- Day 2: Dive! ---
 ;
 ; Now, you need to figure out how to pilot this thing.
@@ -82,15 +80,19 @@
 ; depth?
 
 
-(import (scheme small)
+(import (scheme base)
+	(scheme process-context)
+	(scheme file)
+	(scheme read)
+	(scheme write)
         (scheme list)
         (scheme vector))
 
 (define (read-input filename)
   (with-input-from-file filename
     (lambda ()
-      (unfold (lambda (inst) (not inst))
-              eof-object?
+      (unfold eof-object?
+	      values
               (lambda (x) (read-instruction))
               (read-instruction)))))
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env chibi-scheme
-
 ; --- Day 5: Hydrothermal Venture ---
 ;
 ; You come across a field of hydrothermal vents on the ocean floor! These vents
@@ -88,10 +86,16 @@
 ; overlap. In the above example, this is still anywhere in the diagram with a 2
 ; or larger - now a total of 12 points.
 
-(import (scheme small)
+(import (scheme base)
+	(scheme process-context)
+	(scheme read)
+	(scheme write)
+	(scheme file)
+	(scheme cxr)
         (scheme list)
         (scheme vector)
         (scheme hash-table)
+	(scheme comparator)
         (scheme regex))
 
 (define-record-type <line>
@@ -155,11 +159,11 @@
   (apply vector-map - vs))
 
 (define (part2 lines)
-  (define world (make-hash-table (lambda (x y) (vector= = x y))))
+  (define world (make-hash-table (make-default-comparator)))
   (for-each (lambda (line) (draw world line)) lines)
   (hash-table-fold (lambda (k v sum) (if (>= v 2) (+ sum 1) sum))
                    0 world))
 
-(define lines (read-input "./input"))
+(define lines (read-input (cadr (command-line))))
 (write (part1 lines)) (newline)
 (write (part2 lines)) (newline)

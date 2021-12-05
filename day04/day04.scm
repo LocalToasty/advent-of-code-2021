@@ -1,5 +1,3 @@
-#!/usr/bin/env chibi-scheme
-
 ; --- Day 4: Giant Squid ---
 ;
 ; You're already almost 1.5km (almost a mile) below the surface of the ocean,
@@ -97,7 +95,11 @@
 ; Figure out which board will win last. Once it wins, what would its final
 ; score be?
 
-(import (scheme small)
+(import (scheme base)
+	(scheme process-context)
+	(scheme file)
+	(scheme read)
+	(scheme write)
         (scheme list)
         (scheme vector)
         (scheme text)
