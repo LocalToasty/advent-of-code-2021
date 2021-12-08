@@ -101,21 +101,17 @@
            tokens))))
 
 (define (part1 positions)
-  (grad-desc cost grad positions))
+  (grad-desc cost positions))
 
 (define (cost positions target)
   (fold (lambda (pos sum) (+ sum (abs (- pos target)))) 0 positions))
 
-(define (grad positions target)
-  (fold (lambda (pos sum) (+ sum (cond ((< target pos) -1)
-                                       ((= target pos) 0)
-                                       ((> target pos) 1))))
-        0 positions))
-
 ;; gradient descent with fixed step size of 1
-(define (grad-desc cost grad positions)
+(define (grad-desc cost positions)
   (let* ((start (floor-quotient (fold + 0 positions) (length positions)))
-	 (dir (if (> (grad positions start) 0) -1 1)))
+	 (grad (- (cost positions (+ start 1))
+		  (cost positions start)))
+	 (dir (if (> grad 0) -1 1)))
     (let loop ((target start)
                (best-cost (cost positions start)))
       (let* ((new-target (+ target dir))
@@ -125,7 +121,7 @@
           best-cost)))))
 
 (define (part2 positions)
-  (grad-desc cost2 grad2 positions))
+  (grad-desc cost2 positions))
 
 (define (cost2 positions target)
   (fold (lambda (pos sum) (+ sum (sumto (abs (- pos target))))) 0 positions))
@@ -133,12 +129,6 @@
 ;; sum of integers from 1 to n
 (define (sumto n)
   (/ (* n (+ n 1)) 2))
-
-(define (grad2 positions target)
-  (fold (lambda (pos sum) (+ sum (cond ((< target pos) (- target pos 1))
-                                       ((= target pos) 0)
-                                       ((> target pos) (- pos target -1)))))
-        0 positions))
 
 (define positions (read-input (cadr (command-line))))
 
