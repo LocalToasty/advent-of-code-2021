@@ -1,13 +1,13 @@
 (import (scheme base)
+        (scheme comparator)
+        (scheme file)
+        (scheme hash-table)
+        (scheme list)
         (scheme process-context)
         (scheme read)
-        (scheme write)
-        (scheme file)
         (scheme regex)
-        (scheme list)
-        (scheme mapping)
-        (scheme comparator)
-        (scheme sort))
+        (scheme sort)
+        (scheme write))
 
 (define (read-input filename)
   (with-input-from-file filename
@@ -17,19 +17,18 @@
               (lambda (x) (read-line))
               (read-line)))))
 
-(define comp (make-default-comparator))
-
 (define (parse-datapoint line)
   (let* ((segments (regexp-extract '(+ (/ "ag")) line))
          (segment-chars (map (lambda (s) (list-sort char<? (string->list s))) segments))
-         (segment-symbols (map (lambda (x) (map (lambda (c) (string->symbol (string c)))
-                                                x))
+         (segment-symbols (map (lambda (digit)
+                                 (map (lambda (c) (string->symbol (string c)))
+                                      digit))
                                segment-chars)))
     (call-with-values (lambda () (split-at segment-symbols 10))
                       cons)))
 
 (define (part1 inputs)
-  (let ((unique-count? (lambda (x) (case (length x)
+  (let ((unique-count? (lambda (segments) (case (length segments)
                                      ((2 3 4 7) #t)
                                      (else #f)))))
     (fold (lambda (line sum)
@@ -38,111 +37,51 @@
             0
             inputs)))
 
-;; calculates all the max-length-elem subset permutations of elems 
-(define (permutations elems max-length)
-  (if (= max-length 1)
-    (map list elems)
-    (concatenate (map (lambda (first)
-                        (map (lambda (rest) (cons first rest))
-                               (permutations (delete first elems)
-                                             (- max-length 1))))
-                        elems))))
-
-;; creates a mapping from a list of keys and values
-(define (lists->mapping keys vals)
-  (mapping-unfold (lambda (kvs) (null-list? (car kvs)))
-                  (lambda (kvs) (values (caar kvs)
-                                        (cadr kvs)))
-                  (lambda (kvs) (cons (cdar kvs)
-                                      (cddr kvs)))
-                  (cons keys vals)
-                  comp))
-
-
-;; generates all mappings between two sets
-(define (mappings-from-to from to)
-  (let ((perms (permutations to (length to))))
-    (map (lambda (perm) (lists->mapping from perm))
-         perms)))
-
-
-;; all possible 7-segment mappings
-(define all-mappings (mappings-from-to '(a b c d e f g)
-                                       '(a b c d e f g)))
-
-;; a mapping from numbers to 7-segment encodings
-(define num->sevseg
-  (mapping comp
-           0 '(a b c e f g)
-           1 '(c f)
-           2 '(a c d e g)
-           3 '(a c d f g)
-           4 '(b c d f)
-           5 '(a b d f g)
-           6 '(a b d e f g)
-           7 '(a c f)
-           8 '(a b c d e f g)
-           9 '(a b c d f g)))
-
-;; a mapping from (sorted) 7-segment encodings to numbers
-(define sevseg->num
-  (mapping-map (lambda (k v) (values v k))
-               comp
-               num->sevseg))
-
-(define (mappings-from from)
-  (concatenate (map (lambda (n) (%mappings-to-n from n))
-                   (case (length from)
-                     ((2) '(1))
-                     ((3) '(7))
-                     ((4) '(4))
-                     ((5) '(2 3 5))
-                     ((6) '(0 6 9))
-                     ((7) '(8))))))
-
-;; all possible mappings from an encoding to a number
-(define (%mappings-to-n from n)
-  (mappings-from-to from (mapping-ref num->sevseg n)))
-
-(define (>=any? m1 . ms)
-  (any (lambda (m) (mapping>=? comp m1 m))
-       ms))
-
-(define (sort-symbol-list l)
-  (map string->symbol (list-sort string<? (map symbol->string l))))
-
-;; finds a mapping which decodes the scrambled digits
-(define (find-mapping inputs)
-  (define mapping (fold (lambda (input mappings)
-                          (filter (lambda (m)
-                                    (apply >=any? m (mappings-from input)))
-                                  mappings))
-                        all-mappings
-                        (list-sort (lambda ls (apply < (map length ls))) inputs)))
-  (car mapping))
-
-;; decodes a single number
-(define (decode-scrambled-digit mapping scramble)
-  (mapping-ref sevseg->num
-               (sort-symbol-list (map (lambda (x)
-                                        (mapping-ref mapping x))
-                                      scramble))))
-
-
-;; converts a scrambled sequence into a number
-(define (decode-scrambled-sequence mapping sequence)
-    (fold (lambda (x sum) (+ (* sum 10) (decode-scrambled-digit mapping x)))
-          0
-          sequence))
-
 (define (part2 inputs)
-  (define decoded
-    (map (lambda (row)
-          (let-values (((train test) (car+cdr row)))
-            (let ((mapping (find-mapping train)))
-              (decode-scrambled-sequence mapping test))))
-         inputs))
-  (fold + 0 decoded))
+  (fold + 0 (map decode-line inputs)))
+
+(define (decode-line line)
+  (let* ((decodings (get-decodings (car line)))
+         (digits (map (lambda (segments) (hash-table-ref decodings segments))
+                      (cdr line))))
+    (fold (lambda (d n) (+ (* 10 n) d)) 0 digits)))
+
+(define (get-decodings line)
+  (let ((table (make-hash-table (make-default-comparator))))
+    ; populate with unique values (1, 4, 7, 8)
+    (for-each (lambda (segments)
+                (case (length segments)
+                  ((2) (hash-table-set! table 1 segments))
+                  ((3) (hash-table-set! table 7 segments))
+                  ((4) (hash-table-set! table 4 segments))
+                  ((7) (hash-table-set! table 8 segments))))
+              line)
+    ; populate with 6-segment numbers (0, 6, 9)
+    (for-each (lambda (segments)
+                (if (= 6 (length segments))
+                  (cond ((lset<= eq? (hash-table-ref table 4) segments)
+                         (hash-table-set! table 9 segments))
+                        ((lset<= eq? (hash-table-ref table 7) segments)
+                         (hash-table-set! table 0 segments))
+                        (else
+                         (hash-table-set! table 6 segments)))))
+              line)
+    ; populate with 5-segment numbers (2, 3, 5)
+    (for-each (lambda (segments)
+                (if (= 5 (length segments))
+                  (cond ((lset<= eq? (hash-table-ref table 7) segments)
+                         (hash-table-set! table 3 segments))
+                        ((lset<= eq? segments (hash-table-ref table 9))
+                         (hash-table-set! table 5 segments))
+                        (else
+                         (hash-table-set! table 2 segments)))))
+              line)
+    (invert table)))
+
+(define (invert table)
+  (let ((res (make-hash-table (make-default-comparator))))
+    (hash-table-for-each (lambda (k v) (hash-table-set! res v k)) table)
+    res))
 
 (define inputs (read-input (cadr (command-line))))
 (write (part1 inputs)) (newline)
