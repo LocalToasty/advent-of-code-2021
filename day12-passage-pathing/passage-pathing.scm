@@ -1,19 +1,16 @@
 (import (scheme base)
         (scheme char)
-        (scheme comparator)
         (scheme file)
+        (scheme process-context)
+        (scheme read)
+        (scheme write)
+        (scheme comparator)
         (scheme generator)
         (scheme list)
         (scheme hash-table)
-        (scheme process-context)
-        (scheme text)
-        (scheme read)
-        (scheme regex)
         (scheme set)
-        (scheme write)
-        (srfi 26))      ; cut/cute
-
-(import (gauche vm debugger))
+        (scheme text)
+        (scheme regex))
 
 (define (read-input filename)
   (with-input-from-file filename
@@ -24,9 +21,9 @@
                                      (a (first parts))
                                      (b (second parts)))
                                 (hash-table-update!/default
-                                  connections a (cute cons b <>) '())
+                                  connections a (lambda (bs) (cons b bs)) '())
                                 (hash-table-update!/default
-                                  connections b (cute cons a <>) '())))
+                                  connections b (lambda (as) (cons a as)) '())))
                             read-line)
         connections))))
 
@@ -43,7 +40,7 @@
                         visited))
              (nexts (filter (lambda (c) (not (set-contains? visited c)))
                             (hash-table-ref connections current))))
-        (fold + 0 (map (cute explore <> visited) nexts))))))
+        (fold + 0 (map (lambda (n) (explore n visited)) nexts))))))
 
 (define (part2 connections)
   (let explore ((current "start")
