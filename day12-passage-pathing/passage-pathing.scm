@@ -9,7 +9,6 @@
         (scheme list)
         (scheme hash-table)
         (scheme set)
-        (scheme text)
         (scheme regex))
 
 (define (read-input filename)
@@ -17,7 +16,7 @@
     (lambda ()
       (let ((connections (make-hash-table (make-default-comparator))))
         (generator-for-each (lambda (conn)
-                              (let* ((parts (textual-split conn "-"))
+                              (let* ((parts (regexp-split '#\- conn))
                                      (a (first parts))
                                      (b (second parts)))
                                 (hash-table-update!/default

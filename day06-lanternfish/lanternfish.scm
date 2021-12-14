@@ -3,16 +3,13 @@
         (scheme read)
         (scheme write)
         (scheme file)
-        (scheme text)
-        (scheme vector))
+        (scheme vector)
+        (scheme regex))
 
 (define (read-input filename)
   (with-input-from-file filename
     (lambda ()
-      (define tokens (textual-split (read-line) ","))
-      (map (lambda (number-text)
-             (read (open-input-string (textual->string number-text))))
-           tokens))))
+      (map string->number (regexp-split '#\, (read-line))))))
 
 (define (part1 spawn-cooldowns)
   (grow-for 80 spawn-cooldowns))
